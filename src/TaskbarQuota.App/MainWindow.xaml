@@ -28,6 +28,14 @@
                              OpenPaneLength="220"
                              SelectionChanged="Nav_SelectionChanged">
             <muxc:NavigationView.MenuItems>
+                <muxc:NavigationViewItem x:Name="RemainingQuotaNavigationItem"
+                                         AutomationProperties.AutomationId="RemainingQuotaNavItem"
+                                         Content="Remaining quota"
+                                         Tag="remainingquota">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F5;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem x:Name="CostNavigationItem"
                                          AutomationProperties.AutomationId="CostNavItem"
                                          Content="Cost"

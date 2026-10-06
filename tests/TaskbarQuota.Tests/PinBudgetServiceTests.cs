@@ -64,6 +64,19 @@ public class PinBudgetServiceTests
         => Assert.True(PinBudgetService.FitsTaskbar(new List<int> { 2, 3, 3 }, availableWidth: 0));
 
     [Fact]
+    public void PinningOneProviderUnpinsTheOthers()
+    {
+        WidgetSettingsService.ResetProviderPinsForTesting();
+
+        WidgetSettingsService.SetProviderPinnedForTesting(ProviderId.Codex, true);
+        WidgetSettingsService.SetProviderPinnedForTesting(ProviderId.Claude, true);
+        WidgetSettingsService.SetProviderPinned(ProviderId.Codex, true);
+
+        Assert.True(WidgetSettingsService.IsProviderPinned(ProviderId.Codex));
+        Assert.False(WidgetSettingsService.IsProviderPinned(ProviderId.Claude));
+    }
+
+    [Fact]
     public void NothingIsDroppedWhileTheSetFits()
     {
         var pinned = Pinned((ProviderId.Zai, ShortTile), (ProviderId.Claude, ShortTile));

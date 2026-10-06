@@ -63,6 +63,15 @@
                 </ComboBox>
             </tk:SettingsCard>
 
+            <tk:SettingsCard Header="Show reset countdowns" Description="Keep reset timing visible. Turn it off to focus on the remaining token/query quota only.">
+                <tk:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE823;"/>
+                </tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="ResetCountdownToggle"
+                              AutomationProperties.Name="Show reset countdowns"
+                              Toggled="OnResetCountdownsToggled"/>
+            </tk:SettingsCard>
+
             <tk:SettingsCard Header="Hide widget when no AI app is focused"
                              Description="Fade the active provider's tile out when you switch to a browser or any other app, and bring it back when you return. Pinned providers always stay visible.">
                 <tk:SettingsCard.HeaderIcon>

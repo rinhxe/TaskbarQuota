@@ -81,6 +81,9 @@ public static class WidgetSettingsService
     private static readonly string PercentageDisplayModePath =
         Path.Combine(AppStorage.AppDataDirectory, "percentage-display-mode.txt");
 
+    private static readonly string ShowResetCountdownsPath =
+        Path.Combine(AppStorage.AppDataDirectory, "show-reset-countdowns.txt");
+
     private static readonly string WidgetRowsPath =
         Path.Combine(AppStorage.AppDataDirectory, "widget-rows.json");
 
@@ -125,6 +128,7 @@ public static class WidgetSettingsService
     /// <summary>Floating window Acrylic strength in the range [<see cref="FloatingOpacityMin"/>, <see cref="FloatingOpacityMax"/>].</summary>
     public static double FloatingOpacity { get; private set; } = LoadFloatingOpacity();
     public static PercentageDisplayMode CurrentPercentageMode { get; private set; } = LoadPercentageDisplayMode();
+    public static bool ShowResetCountdowns { get; private set; } = LoadShowResetCountdowns();
     public static bool AutoHideUnavailable { get; private set; } = LoadAutoHideUnavailable();
     /// <summary>
     /// Opt-in: the active provider's tile only stays on the taskbar while that provider's app is the
@@ -299,6 +303,16 @@ public static class WidgetSettingsService
         Changed?.Invoke(null, EventArgs.Empty);
     }
 
+    public static void ApplyShowResetCountdowns(bool enabled)
+    {
+        if (ShowResetCountdowns == enabled)
+            return;
+
+        ShowResetCountdowns = enabled;
+        Save(ShowResetCountdownsPath, enabled ? 1 : 0);
+        Changed?.Invoke(null, EventArgs.Empty);
+    }
+
     public static double DisplayPercent(double usedPercent)
     {
         double used = Math.Clamp(usedPercent, 0, 100);
@@ -363,7 +377,19 @@ public static class WidgetSettingsService
     /// </summary>
     public static void SetProviderPinned(ProviderId provider, bool pinned)
     {
-        bool pinChanged = SetProviderPinnedSilent(provider, pinned);
+        bool pinChanged = false;
+        if (pinned)
+        {
+            foreach (var otherProvider in ProviderPins
+                         .Where(pair => pair.Key != provider.ToString() && pair.Value)
+                         .Select(pair => pair.Key)
+                         .ToList())
+            {
+                pinChanged |= SetProviderPinnedSilent(Enum.Parse<ProviderId>(otherProvider), false);
+            }
+        }
+
+        pinChanged |= SetProviderPinnedSilent(provider, pinned);
         bool visibilityChanged = pinned && SetProviderVisibleSilent(provider, true);
         if (!pinChanged && !visibilityChanged)
             return;
@@ -787,6 +813,22 @@ public static class WidgetSettingsService
         catch
         {
             return PercentageDisplayMode.Consumed;
+        }
+    }
+
+    private static bool LoadShowResetCountdowns()
+    {
+        try
+        {
+            if (!File.Exists(ShowResetCountdownsPath))
+                return false;
+
+            string raw = File.ReadAllText(ShowResetCountdownsPath);
+            return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value != 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 

@@ -49,9 +49,9 @@ namespace TaskbarQuota
             Root.Loaded -= OnRootLoaded;
             ApplyInitialWindowSize();
             _navigationBinder?.SetProviderPageActive(false);
-            Nav.SelectedItem = CostNavigationItem;
-            if (ContentFrame.CurrentSourcePageType != typeof(CostPage))
-                ContentFrame.Navigate(typeof(CostPage), null, new SuppressNavigationTransitionInfo());
+            Nav.SelectedItem = RemainingQuotaNavigationItem;
+            if (ContentFrame.CurrentSourcePageType != typeof(RemainingQuotaPage))
+                ContentFrame.Navigate(typeof(RemainingQuotaPage), null, new SuppressNavigationTransitionInfo());
         }
 
         private void ApplyInitialWindowSize()
@@ -162,6 +162,14 @@ namespace TaskbarQuota
             {
                 _navigationBinder?.SetProviderPageActive(false);
                 ContentFrame.Navigate(typeof(SettingsPage), null, info);
+                return;
+            }
+
+            if (args.SelectedItemContainer is NavigationViewItem { Tag: "remainingquota" })
+            {
+                _navigationBinder?.SetProviderPageActive(false);
+                if (ContentFrame.CurrentSourcePageType != typeof(RemainingQuotaPage))
+                    ContentFrame.Navigate(typeof(RemainingQuotaPage), null, info);
                 return;
             }
 

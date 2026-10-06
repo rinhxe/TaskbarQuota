@@ -45,8 +45,9 @@ namespace TaskbarQuota.ViewModels
             Percent = included ? displayPercent : 0;
             PercentText = included ? WidgetSettingsService.FormatDisplayPercent(w.UsedPercent) : "Not included";
             BarVisibility = included ? Visibility.Visible : Visibility.Collapsed;
-            ResetText = included && w.ResetDescription is { } r ? $"resets in {r}" : string.Empty;
-            ResetVisibility = included && w.ResetDescription is not null ? Visibility.Visible : Visibility.Collapsed;
+            bool showResetCountdowns = WidgetSettingsService.ShowResetCountdowns;
+            ResetText = showResetCountdowns && included && w.ResetDescription is { } r ? $"resets in {r}" : string.Empty;
+            ResetVisibility = showResetCountdowns && included && w.ResetDescription is not null ? Visibility.Visible : Visibility.Collapsed;
             BarBrush = Ui.UsageBrush(displayPercent);
             PercentForeground = BarBrush;
             IsWidgetVisible = WidgetSettingsService.IsRowVisible(providerId, widgetRowId);

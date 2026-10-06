@@ -28,7 +28,7 @@ public class WidgetDisplayProvidersTests
             isAvailable ?? (_ => true));
 
     [Fact]
-    public void PinnedProvidersLeadActiveInRecencyOrder()
+    public void PinnedProvidersLeadInRecencyOrderWithoutAppendingTheActiveProvider()
     {
         // The scenario from the issue thread: Claude used just before Codex, Z.AI never focused.
         var result = Compute(
@@ -36,7 +36,7 @@ public class WidgetDisplayProvidersTests
             pinned: new[] { ProviderId.Claude, ProviderId.Zai },
             recent: new[] { ProviderId.Codex, ProviderId.Claude });
 
-        Assert.Equal(new[] { ProviderId.Claude, ProviderId.Zai, ProviderId.Codex }, result);
+        Assert.Equal(new[] { ProviderId.Claude, ProviderId.Zai }, result);
     }
 
     [Fact]
@@ -113,7 +113,6 @@ public class WidgetDisplayProvidersTests
                 ProviderId.Cursor,
                 ProviderId.Grok,
                 ProviderId.Zai,
-                ProviderId.Codex,
             },
             result);
     }
@@ -125,17 +124,17 @@ public class WidgetDisplayProvidersTests
             active: ProviderId.Codex,
             pinned: new[] { ProviderId.Claude, ProviderId.Zai });
 
-        Assert.Equal(new[] { ProviderId.Claude, ProviderId.Zai, ProviderId.Codex }, result);
+        Assert.Equal(new[] { ProviderId.Claude, ProviderId.Zai }, result);
     }
 
     [Fact]
-    public void OnePinLeavesOneSlotForActiveProvider()
+    public void OnePinnedProviderSuppressesTheActiveProvider()
     {
         var result = Compute(
             active: ProviderId.Codex,
             pinned: new[] { ProviderId.Claude });
 
-        Assert.Equal(new[] { ProviderId.Claude, ProviderId.Codex }, result);
+        Assert.Equal(new[] { ProviderId.Claude }, result);
     }
 
     [Fact]

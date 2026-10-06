@@ -174,8 +174,12 @@ namespace TaskbarQuota
             var result = new List<ProviderId>(pinned.Count + 1);
             result.AddRange(pinned);
 
-            // Pins are an explicit request to keep a provider visible. The active tile is useful context and
-            // follows the pins; the routed display cap decides whether it has room to render it.
+            // A pin is an explicit request to keep only that provider visible in the widget. When any pin is
+            // active, the active tool should not append a second slot; the user asked for the pinned tile only,
+            // and a tiny taskbar width is exactly where the extra tile causes the overflow bug.
+            if (result.Count > 0)
+                return result;
+
             if (present
                 && active is { } a
                 && isVisible(a)

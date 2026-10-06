@@ -498,6 +498,8 @@ namespace TaskbarQuota.Controls
 
         private static List<WidgetUsageRow> BuildRows(UsageResult result, UsageSnapshot usage)
         {
+            bool showResetCountdowns = WidgetSettingsService.ShowResetCountdowns;
+
             if (result.Id == ProviderId.Codex)
             {
                 var rows = BuildBaseRows(result, usage);
@@ -518,7 +520,9 @@ namespace TaskbarQuota.Controls
                         rows.Add(new WidgetUsageRow("Credits", 0, FormatCreditCount(codexCredits.Amount), HasBar: false));
                     }
                 }
-                if (usage.ResetCredits is { AvailableCount: > 0 } resetCredits && WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowResetCredits))
+                if (showResetCountdowns &&
+                    usage.ResetCredits is { AvailableCount: > 0 } resetCredits &&
+                    WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowResetCredits))
                 {
                     string? expiresIn = CodexProvider.FormatResetCountdown(resetCredits.EarliestExpiresAt);
                     rows.Add(new WidgetUsageRow(
@@ -531,7 +535,7 @@ namespace TaskbarQuota.Controls
 
                 if (WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowExtra))
                 {
-                    rows.AddRange(usage.ExtraRateWindows.Select(w => WindowRow(w.Title, w.Window)));
+                    rows.AddRange(usage.ExtraRateWindows.Select(w => WindowRow(w.Title, w.Window, showResetCountdowns: showResetCountdowns)));
                 }
                 return rows;
             }
@@ -539,7 +543,8 @@ namespace TaskbarQuota.Controls
             if (result.Id is ProviderId.Claude or ProviderId.Zai)
             {
                 var rows = BuildBaseRows(result, usage);
-                if (result.Id == ProviderId.Claude &&
+                if (showResetCountdowns &&
+                    result.Id == ProviderId.Claude &&
                     usage.ResetCredits is { AvailableCount: > 0 } resetCredits &&
                     WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowResetCredits))
                 {
@@ -556,7 +561,7 @@ namespace TaskbarQuota.Controls
                     rows.Insert(0, new WidgetUsageRow(pricing.Period, 0, pricing.MultiplierText, HasBar: false, ForegroundBrush: PricingBrush(pricing)));
                 if (WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowExtra))
                 {
-                    rows.AddRange(usage.ExtraRateWindows.Select(w => WindowRow(w.Title, w.Window)));
+                    rows.AddRange(usage.ExtraRateWindows.Select(w => WindowRow(w.Title, w.Window, showResetCountdowns: showResetCountdowns)));
                 }
                 return rows;
             }
@@ -598,14 +603,14 @@ namespace TaskbarQuota.Controls
             return $"{minutes}m";
         }
 
-        private static WidgetUsageRow WindowRow(string label, RateWindow window, string? glyphData = null)
+        private static WidgetUsageRow WindowRow(string label, RateWindow window, string? glyphData = null, bool showResetCountdowns = true)
         {
             bool included = window.IsIncluded;
             return new WidgetUsageRow(
                 CompactLabel(label),
                 included ? WidgetSettingsService.DisplayPercent(window.UsedPercent) : 0,
                 included ? WidgetSettingsService.FormatDisplayPercent(window.UsedPercent) : "Not included",
-                included ? window.ResetDescription : null,
+                showResetCountdowns && included ? window.ResetDescription : null,
                 HasBar: included,
                 GlyphData: glyphData);
         }
@@ -676,6 +681,7 @@ namespace TaskbarQuota.Controls
         private static List<WidgetUsageRow> BuildBaseRows(UsageResult result, UsageSnapshot usage)
         {
             var rows = new List<WidgetUsageRow>();
+            bool showResetCountdowns = WidgetSettingsService.ShowResetCountdowns;
             // Skip the primary bar when the provider reported no session window (Codex org/Business):
             // otherwise the widget shows a bogus "Session 0%". Honor the window's Label override so
             // Claude Enterprise reads "Spend limit" instead of "Session".
@@ -684,7 +690,7 @@ namespace TaskbarQuota.Controls
                 var primaryLabel = usage.Primary.Label ?? result.Provider?.SessionLabel ?? "Usage";
                 if (!usage.Primary.IsIncluded)
                 {
-                    rows.Add(WindowRow(primaryLabel, usage.Primary));
+                    rows.Add(WindowRow(primaryLabel, usage.Primary, showResetCountdowns: showResetCountdowns));
                 }
                 else
                 {
@@ -697,21 +703,21 @@ namespace TaskbarQuota.Controls
                         CompactLabel(primaryLabel),
                         WidgetSettingsService.DisplayPercent(usage.Primary.UsedPercent),
                         primaryValue,
-                        usage.Primary.ResetDescription));
+                        showResetCountdowns ? usage.Primary.ResetDescription : null));
                 }
             }
             if (usage.Secondary != null && WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowSecondary))
             {
                 var secondaryLabel = result.Provider?.WeeklyLabel ?? "Usage";
-                rows.Add(WindowRow(secondaryLabel, usage.Secondary));
+                rows.Add(WindowRow(secondaryLabel, usage.Secondary, showResetCountdowns: showResetCountdowns));
             }
             if (usage.ModelSpecific != null && WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowModelSpecific))
             {
-                rows.Add(WindowRow(usage.ModelSpecific.Label ?? ModelSpecificLabel(result.Id), usage.ModelSpecific));
+                rows.Add(WindowRow(usage.ModelSpecific.Label ?? ModelSpecificLabel(result.Id), usage.ModelSpecific, showResetCountdowns: showResetCountdowns));
             }
             if (usage.Monthly != null && WidgetSettingsService.IsRowVisible(result.Id, WidgetSettingsService.RowMonthly))
             {
-                rows.Add(WindowRow("Monthly", usage.Monthly));
+                rows.Add(WindowRow("Monthly", usage.Monthly, showResetCountdowns: showResetCountdowns));
             }
 
             return rows;
@@ -736,7 +742,7 @@ namespace TaskbarQuota.Controls
         private void ApplyZenDisplay(UsageResult result, UsageSnapshot usage, bool providerChanged = false)
         {
             _forcePercentagesOnly = true;
-            var balanceText = usage.Secondary?.ResetDescription;
+            var balanceText = WidgetSettingsService.ShowResetCountdowns ? usage.Secondary?.ResetDescription : null;
             var rows = new List<WidgetUsageRow>();
             if (WidgetSettingsService.IsRowVisible(ProviderId.OpenCode, WidgetSettingsService.RowUsage))
             {
@@ -838,7 +844,7 @@ namespace TaskbarQuota.Controls
                 : $"{WidgetTooltipTitle(widgetName, result.Source)} · {plan}\nCredits: {value} ({FormatCreditCount(remaining)} remaining)";
             if (usage.AdditionalUsage is { Enabled: true } addl)
                 tooltip += $"\nAdditional usage: {addl.StatusText} ({addl.SpendText})";
-            if (usage.Primary.ResetDescription is { } resetDesc)
+            if (WidgetSettingsService.ShowResetCountdowns && usage.Primary.ResetDescription is { } resetDesc)
                 tooltip += $"\nresets in {resetDesc}";
             if (usage.Pricing is { } pricingState)
                 tooltip += $"\n{pricingState.Display}";

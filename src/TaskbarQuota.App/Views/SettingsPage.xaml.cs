@@ -75,6 +75,7 @@ namespace TaskbarQuota.Views
                 _ => 0,
             };
             PercentageModeCombo.SelectedIndex = WidgetSettingsService.CurrentPercentageMode == PercentageDisplayMode.Remaining ? 1 : 0;
+            ResetCountdownToggle.IsOn = WidgetSettingsService.ShowResetCountdowns;
             StartupToggle.IsEnabled = false;
             ApplyQuotaAlertSettingsToControls();
             AutoHideUnavailableToggle.IsOn = WidgetSettingsService.AutoHideUnavailable;
@@ -276,6 +277,14 @@ namespace TaskbarQuota.Views
                 return;
 
             WidgetSettingsService.ApplyHideWhenProviderUnfocused(HideWhenUnfocusedToggle.IsOn);
+        }
+
+        private void OnResetCountdownsToggled(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing)
+                return;
+
+            WidgetSettingsService.ApplyShowResetCountdowns(ResetCountdownToggle.IsOn);
         }
 
         private void OnProviderDashboardToggled(object sender, RoutedEventArgs e)
