@@ -205,42 +205,6 @@ public static class ProviderDiscoveryService
         return false;
     }
 
-    internal static void ResetForTesting()
-    {
-        lock (SyncRoot)
-        {
-            Probed.Clear();
-            Configured.Clear();
-            ExplicitlyEnabled.Clear();
-            ExplicitlyDisabled.Clear();
-            ExplicitlyWidgetDisabled.Clear();
-        }
-    }
-
-    internal static void MarkProbedForTesting(ProviderId id)
-    {
-        lock (SyncRoot)
-            Probed.Add(id);
-    }
-
-    internal static void MarkConfiguredForTesting(ProviderId id)
-    {
-        lock (SyncRoot)
-            Configured.Add(id);
-    }
-
-    internal static void MarkExplicitlyDisabledForTesting(ProviderId id)
-    {
-        lock (SyncRoot)
-            ExplicitlyDisabled.Add(id);
-    }
-
-    internal static void MarkExplicitlyWidgetDisabledForTesting(ProviderId id)
-    {
-        lock (SyncRoot)
-            ExplicitlyWidgetDisabled.Add(id);
-    }
-
     private static void Load()
     {
         bool hasExplicitWidgetState = false;

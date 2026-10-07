@@ -527,6 +527,7 @@ namespace TaskbarQuota.Taskbar
             {
                 appWindow?.ResizeClient(new SizeInt32(WidgetHostWidth, taskbarHeight));
                 activityAppWindow?.ResizeClient(new SizeInt32(ActivityHostWidth, taskbarHeight));
+                UpdateTileDensity(taskbarHeight);
             }
 
             lastWidgetsButtonClientRect = null;
@@ -803,6 +804,7 @@ namespace TaskbarQuota.Taskbar
                 HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
                 VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Stretch,
                 Visibility = Microsoft.UI.Xaml.Visibility.Collapsed,
+                TaskbarHeight = appWindow?.Size.Height ?? 40,
             };
             summary.DesiredHostWidthChanged += WidgetSummary_DesiredHostWidthChanged;
             summary.PointerPressed += WidgetSummary_PointerPressed;
@@ -825,6 +827,15 @@ namespace TaskbarQuota.Taskbar
             Visibility = Microsoft.UI.Xaml.Visibility.Collapsed,
             IsHitTestVisible = false,
         };
+
+        private void UpdateTileDensity(int taskbarHeight)
+        {
+            foreach (var tile in tiles)
+            {
+                if (tile is not null)
+                    tile.TaskbarHeight = taskbarHeight;
+            }
+        }
 
         private void OnTileClicked() => Clicked?.Invoke();
 

@@ -7,15 +7,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="Root" Background="Transparent" Padding="4,3" Opacity="0">
+    <Grid x:Name="Root" Background="Transparent" Padding="3,2" Opacity="0">
         <Grid.RenderTransform>
             <TranslateTransform x:Name="RootTranslate" Y="4"/>
         </Grid.RenderTransform>
-        <Grid x:Name="Panel" ColumnSpacing="6" RowSpacing="3"
+        <Grid x:Name="Panel" ColumnSpacing="6" RowSpacing="1"
               VerticalAlignment="Center" HorizontalAlignment="Center">
             <Grid.RowDefinitions>
-                <RowDefinition Height="17"/>
-                <RowDefinition Height="17"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="IconColumn" Width="30"/>

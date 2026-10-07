@@ -26,7 +26,7 @@ namespace TaskbarQuota.Controls
         private const int MinLabelColumnWidth = 0;
         private const int MinResetColumnWidth = 0;
         private const int ValueColumnWidth = 34;
-        private const int WidgetFontSize = 11;
+        private const int DefaultWidgetFontSize = 11;
         private const int BarHeight = 6;
         private const int SingleRowBarHeight = 8;
         private const int BarWidthBarsOnly = 54;
@@ -94,6 +94,27 @@ namespace TaskbarQuota.Controls
         /// tiles it shows to size the multi-provider widget and to decide how many tiles actually fit.
         /// </summary>
         public int DesiredLogicalWidth { get; private set; }
+
+        /// <summary>
+        /// Actual taskbar height, used to scale the widget tighter or looser when the taskbar is taller
+        /// or shorter than the default 40px target.
+        /// </summary>
+        public int TaskbarHeight { get; set; } = 40;
+
+        private int EffectiveWidgetFontSize => ResolveWidgetFontSize(TaskbarHeight);
+        private double EffectiveRowSpacing => ResolveRowSpacing(TaskbarHeight);
+        private double EffectiveRowHeight => ResolveRowHeight(TaskbarHeight);
+
+        private static int ResolveWidgetFontSize(int taskbarHeight)
+            => taskbarHeight <= 0
+                ? DefaultWidgetFontSize
+                : Math.Clamp((int)Math.Round(DefaultWidgetFontSize * (taskbarHeight / 40d)), 10, 13);
+
+        private static double ResolveRowSpacing(int taskbarHeight)
+            => taskbarHeight <= 0 ? 1d : Math.Clamp(taskbarHeight / 40d, 1d, 3d);
+
+        private static double ResolveRowHeight(int taskbarHeight)
+            => taskbarHeight <= 0 ? 16d : Math.Clamp(taskbarHeight / 2.5d, 14d, 20d);
 
         private readonly List<RenderedRow> _renderedRows = new();
         private List<WidgetUsageRow> _rows = new();
@@ -1242,6 +1263,8 @@ namespace TaskbarQuota.Controls
 
         private void RenderRows()
         {
+            ApplyTaskbarMetrics();
+
             var mode = _forcePercentagesOnly ? WidgetDisplayMode.PercentagesOnly : WidgetSettingsService.Current;
 
             ClearDynamicContent();
@@ -1274,6 +1297,17 @@ namespace TaskbarQuota.Controls
             SetBars();
             DesiredLogicalWidth = CalculateDesiredWidth(rows, mode);
             DesiredHostWidthChanged?.Invoke(DesiredLogicalWidth);
+        }
+
+        private void ApplyTaskbarMetrics()
+        {
+            Root.Padding = new Thickness(3, Math.Clamp(TaskbarHeight / 32d, 1.5d, 3d), 3, Math.Clamp(TaskbarHeight / 32d, 1.5d, 3d));
+            Panel.RowSpacing = EffectiveRowSpacing;
+            if (Panel.RowDefinitions.Count >= 2)
+            {
+                Panel.RowDefinitions[0].Height = new GridLength(EffectiveRowHeight, GridUnitType.Pixel);
+                Panel.RowDefinitions[1].Height = new GridLength(EffectiveRowHeight, GridUnitType.Pixel);
+            }
         }
 
         private void ClearDynamicContent()
@@ -1379,7 +1413,7 @@ namespace TaskbarQuota.Controls
             return (int)Math.Ceiling(total + (Math.Max(0, columnCount - 1) * PanelColumnSpacing) + padding);
         }
 
-        private static WidgetLayoutMetrics CalculateLayoutMetrics(
+        private WidgetLayoutMetrics CalculateLayoutMetrics(
             IReadOnlyList<WidgetUsageRow> rows,
             WidgetDisplayMode mode,
             int group)
@@ -1389,7 +1423,7 @@ namespace TaskbarQuota.Controls
             // Single-row groups (e.g. the Grok/Copilot credits meter) render one point larger, so
             // measure at that size — otherwise the label ("Credits") is sized too narrow and clips.
             bool isSingleRowGroup = rows.Count == 1 && count == 1;
-            int labelFont = isSingleRowGroup ? WidgetFontSize + 1 : WidgetFontSize;
+            int labelFont = isSingleRowGroup ? EffectiveWidgetFontSize + 1 : EffectiveWidgetFontSize;
             double widestLabel = 0;
             double widestReset = 0;
             for (int i = 0; i < count; i++)
@@ -1430,7 +1464,7 @@ namespace TaskbarQuota.Controls
             bool isSingleRowGroup)
         {
             int rowSpan = isSingleRowGroup ? MaxRowsPerGroup : 1;
-            int textSize = isSingleRowGroup ? WidgetFontSize + 1 : WidgetFontSize;
+            int textSize = isSingleRowGroup ? EffectiveWidgetFontSize + 1 : EffectiveWidgetFontSize;
             bool compactTextOnlyValue = !usageRow.HasBar && mode != WidgetDisplayMode.PercentagesOnly;
             var value = CreateText(
                 usageRow.Value,
@@ -1573,7 +1607,7 @@ namespace TaskbarQuota.Controls
             };
         }
 
-        private static TextBlock CreateText(string text, double opacity, TextAlignment alignment, int fontSize = WidgetFontSize) => new()
+        private static TextBlock CreateText(string text, double opacity, TextAlignment alignment, int fontSize = DefaultWidgetFontSize) => new()
         {
             Text = text,
             FontFamily = new FontFamily("Segoe UI Variable Text"),
@@ -1591,9 +1625,10 @@ namespace TaskbarQuota.Controls
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        private FrameworkElement CreateLabelText(WidgetUsageRow row, WidgetDisplayMode mode, int fontSize = WidgetFontSize)
+        private FrameworkElement CreateLabelText(WidgetUsageRow row, WidgetDisplayMode mode, int fontSize = -1)
         {
-            var baseLabel = CreateText(BaseLabelText(row, mode), 0.78, TextAlignment.Left, fontSize);
+            var effectiveFont = fontSize > 0 ? fontSize : EffectiveWidgetFontSize;
+            var baseLabel = CreateText(BaseLabelText(row, mode), 0.78, TextAlignment.Left, effectiveFont);
             baseLabel.TextTrimming = TextTrimming.None;
             // Explicit brush: inheritance is unreliable once Application theme resources disagree
             // with the floating window's light/dark chrome.
@@ -1601,12 +1636,13 @@ namespace TaskbarQuota.Controls
             return baseLabel;
         }
 
-        private TextBlock CreateResetText(WidgetUsageRow row, int fontSize = WidgetFontSize)
+        private TextBlock CreateResetText(WidgetUsageRow row, int fontSize = -1)
         {
+            var effectiveFont = fontSize > 0 ? fontSize : EffectiveWidgetFontSize;
             if (string.IsNullOrWhiteSpace(row.ResetDescription))
-                return CreateText("", 0.9, TextAlignment.Left, fontSize);
+                return CreateText("", 0.9, TextAlignment.Left, effectiveFont);
 
-            var reset = CreateText($"({CompactResetDescription(row.ResetDescription)})", 0.9, TextAlignment.Left, fontSize);
+            var reset = CreateText($"({CompactResetDescription(row.ResetDescription)})", 0.9, TextAlignment.Left, effectiveFont);
             reset.Foreground = ResetBrush(row.ResetDescription);
             reset.TextTrimming = TextTrimming.None;
             return reset;
@@ -1756,7 +1792,7 @@ namespace TaskbarQuota.Controls
         private static string BaseLabelText(WidgetUsageRow row, WidgetDisplayMode mode)
             => mode == WidgetDisplayMode.PercentagesOnly ? row.Label + ":" : row.Label;
 
-        private static double MeasureTextWidth(string text, int fontSize = WidgetFontSize)
+        private static double MeasureTextWidth(string text, int fontSize = DefaultWidgetFontSize)
         {
             var textBlock = new TextBlock
             {

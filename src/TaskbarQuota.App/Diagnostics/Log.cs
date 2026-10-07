@@ -19,8 +19,6 @@ namespace TaskbarQuota.Diagnostics
 
         private static void Write(string level, string message)
         {
-            // PID tag: several instances (installed + dev build) routinely run side by side and all append
-            // to this one path, which made interleaved logs unreadable during the issue #70 investigation.
             var line = $"[{DateTime.Now:HH:mm:ss.fff}] [{level}] [pid {Environment.ProcessId}] {message}";
             Trace.WriteLine(line);
             try { lock (FileLock) File.AppendAllText(LogPath, line + Environment.NewLine); } catch { }

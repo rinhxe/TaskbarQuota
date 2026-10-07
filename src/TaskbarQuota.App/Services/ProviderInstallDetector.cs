@@ -21,8 +21,6 @@ internal static class ProviderInstallDetector
     private static readonly ConcurrentDictionary<string, bool> CliAvailability = new(StringComparer.OrdinalIgnoreCase);
     private static volatile bool _cliCacheReady;
 
-    internal static Func<ProviderId, bool>? IsInstalledOverrideForTesting;
-
     /// <summary>Precomputes CLI availability once so startup does not spawn many where.exe processes.</summary>
     public static void WarmCliCache()
     {
@@ -35,19 +33,8 @@ internal static class ProviderInstallDetector
         _cliCacheReady = true;
     }
 
-    internal static void ResetCliCacheForTesting()
-    {
-        CliAvailability.Clear();
-        _cliCacheReady = false;
-    }
-
     public static bool IsInstalled(ProviderId id)
-    {
-        if (IsInstalledOverrideForTesting is { } overrideFn)
-            return overrideFn(id);
-
-        return _cliCacheReady ? IsInstalledCore(id) : IsInstalledWithoutCliProbe(id);
-    }
+        => _cliCacheReady ? IsInstalledCore(id) : IsInstalledWithoutCliProbe(id);
 
     private static bool IsInstalledCore(ProviderId id) => id switch
     {

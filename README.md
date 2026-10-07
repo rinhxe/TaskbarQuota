@@ -130,14 +130,20 @@ Requirements:
 - Windows App SDK and WinUI 3 tooling
 
 ```powershell
-# Build
-dotnet build src/TaskbarQuota.App/TaskbarQuota.App.csproj -c Debug -p:Platform=x64
+# From the repo root
+& "C:\Program Files\dotnet\dotnet.exe" build "TaskbarQuota.slnx"
+
+# Or if dotnet is already on PATH
+# dotnet build TaskbarQuota.slnx
+
+# Build only the app project
+# & "C:\Program Files\dotnet\dotnet.exe" build "src\TaskbarQuota.App\TaskbarQuota.App.csproj" -c Debug -p:Platform=x64
 
 # Run
-dotnet run --project src/TaskbarQuota.App/TaskbarQuota.App.csproj
+# & "C:\Program Files\dotnet\dotnet.exe" run --project "src\TaskbarQuota.App\TaskbarQuota.App.csproj"
 
 # Test
-dotnet test tests/TaskbarQuota.Tests/TaskbarQuota.Tests.csproj
+# & "C:\Program Files\dotnet\dotnet.exe" test "tests\TaskbarQuota.Tests\TaskbarQuota.Tests.csproj"
 ```
 
 The app is a self-contained WinUI 3 build. It does not require a separate backend.
